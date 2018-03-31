@@ -4,9 +4,9 @@
 
 Buffer是原生类型数据的容器
 
-Buffer是基于特定原生数据类型的线性的、有序序列。除了它的内容之外，Buffer的基本属性有capacity，limit和position：
+Buffer是基于特定原生数据类型的线性的, 有序序列。除了它的内容之外，Buffer的基本属性有capacity，limit和position：
 
-> Buffer的capacity代表它所包含的元素数量。Buffer的capacity是非负的、不可变的。
+> Buffer的capacity代表它所包含的元素数量。Buffer的capacity是非负的, 不可变的。
 
 > Buffer的limit是第一个不可读或写的元素的索引。Buffer的limit是非负的并且永远不会大于它的capacity。
 
@@ -39,7 +39,7 @@ Buffer的标记(mark)是一个索引，在reset方法被执行时会被重置。
 
 ### Clearing(清理), flipping(翻转), and rewinding(重置)
 
-除了访问position、limit、capacity和重置标记(mark)的方法外，这个类还定义了一下的操作：
+除了访问position, limit, capacity和重置标记(mark)的方法外，这个类还定义了一下的操作：
 
 - clear() 使缓冲区为新的读通道或相对put操作做好准备：它设置limit为capacity，设置position为0。
 - flip() 使缓冲区为新的写通道或相对get操作做好准备：它设置limit为当前position，设置position为0。
@@ -47,7 +47,7 @@ Buffer的标记(mark)是一个索引，在reset方法被执行时会被重置。
 
 ### 只读Buffer
 
-每一个Buffer都可以读，但不是所有的Buffer都可以写。每个缓冲类的突变方法被指定为可选操作，当在只读缓冲区上调用时将抛出ReadOnlyBufferException。一个只读的buffer不允许它的内容改变，但是它的mark、position和limit是可变的。一个buffer是否是只读的取决于它的isReadOnly方法。
+每一个Buffer都可以读，但不是所有的Buffer都可以写。每个缓冲类的突变方法被指定为可选操作，当在只读缓冲区上调用时将抛出ReadOnlyBufferException。一个只读的buffer不允许它的内容改变，但是它的mark, position和limit是可变的。一个buffer是否是只读的取决于它的isReadOnly方法。
 
 ### 线程安全
 
