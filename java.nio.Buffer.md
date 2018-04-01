@@ -4,7 +4,7 @@
 
 Buffer是原生类型数据的容器
 
-Buffer是基于特定原生数据类型的线性的, 有序序列. 除了它的内容之外, Buffer的基本属性有capacity, limit和position：
+Buffer是基于特定原生数据类型的线性的, 有限序列. 除了它的内容之外, Buffer的基本属性有capacity, limit和position：
 
 > Buffer的capacity代表它所包含的元素数量. Buffer的capacity是非负的，不可变的. 
 
