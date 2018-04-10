@@ -21,5 +21,16 @@ Channel指的是可以向其写入或读取的对象，类似java.io中年的Str
 ```
 
 ## Buffer
+
+Buffer包含四个重要属性和五个重要方法
+
+四个属性分别是：capacity，position，limit，mark
+
+capacity：capacity代表Buffer包含的元素的数量，它是不可变的。
+position：position代表当前Buffer下一个可读或者可写的索引。
+limit：limit代表当前Buffer第一个不可读或不可写的索引。
+mark：mark是一个索引，在调用Buffer的reset的时候将position设为mark，mark不是总是被定义的，未定义为-1
+
+
 
 
