@@ -75,3 +75,5 @@ Create a new instance using the default number of threads, the default ThreadFac
 翻译一下：使用默认的线程数量、默认的ThreadFactory以及SelectorProvider.provider()提供的SelectorProvider 来创建一个新的实例，
 
 SelectorProvider.provider()这个方法默认返回的SelectorProvider的实例是与平台相关的，在openjdk中可以看到在linux上返回的是EPollSelectorProvider，windows上返回的WindowsSelectorProvider，mac上返回的是KQueueSelectorProvider，salaris返回的是DevPollSelectorProvider。
+
+
