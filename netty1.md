@@ -54,3 +54,24 @@ EventExecutorGroup见名知意，它是事件循环组，那么它肯定包含�
 
 ### 4. ChannelFuture register(Channel channel, ChannelPromise promise);
 这个方法已经被netty标为过时，netty建议使用第3个方法，在此不再赘述。
+
+## EventExecutorGroup
+
+下面看介绍一下EventLoopGroup的父接口EventExecutorGroup
+
+EventExecutorGroup负责通过它的next()方法来提供io.netty.util.concurrent.EventExecutor。除此之外，它还负责处理它们的生命周期并且允许以全局的方式来关闭它们。
+
+我们发现EventExecutorGroup这里也有next()方法，所以EventLoopGroup的next()方式是重写了EventExecutorGroup的方法，那么说明EventLoop是EventExecutor的子接口，后面我们在研究。
+
+
+## NioEventLoopGroup
+
+NioEventLoopGroup是 MultithreadEventLoopGroup 的子类。MultithreadEventLoopGroup实现被用于基于Channel的NIO Selector。这里用到了nio的知识。
+
+NioEventLoopGroup默认的构造方式的javadoc：
+```
+Create a new instance using the default number of threads, the default ThreadFactory and the SelectorProvider which is returned by SelectorProvider.provider().
+```
+翻译一下：使用默认的线程数量、默认的ThreadFactory以及SelectorProvider.provider()提供的SelectorProvider 来创建一个新的实例，
+
+SelectorProvider.provider()这个方法默认返回的SelectorProvider的实例是与平台相关的，在openjdk中可以看到在linux上返回的是EPollSelectorProvider，windows上返回的WindowsSelectorProvider，mac上返回的是KQueueSelectorProvider，salaris返回的是DevPollSelectorProvider。
