@@ -76,4 +76,85 @@ Create a new instance using the default number of threads, the default ThreadFac
 
 SelectorProvider.provider()这个方法默认返回的SelectorProvider的实例是与平台相关的，在openjdk中可以看到在linux上返回的是EPollSelectorProvider，windows上返回的WindowsSelectorProvider，mac上返回的是KQueueSelectorProvider，salaris返回的是DevPollSelectorProvider。
 
+下面看一下NioEventLoopGroup构造过程：
+这是默认的构造方法，它传递的nThreads即线程数为0
+![默认构造方法](./img/NioEventLoopGroup01.png)
 
+看默认构造方法的重载方法，即默认构造方法调用的另一个构造方法：
+![重载的构造方法](./img/NioEventLoopGroup02.png)
+
+线程数出入的是0，Executor是null，在看下另一个重载的构造方法：
+![重载的构造方法](./img/NioEventLoopGroup03.png)
+
+线程数传入的是0，Executor是null，SelectorProvider传入的SelectorProvider.provider()提供的SelectorProvider实例，继续看：
+![重载的构造方法](./img/NioEventLoopGroup04.png)
+
+线程数传入的是0，Executor是null，SelectorProvider传入的SelectorProvider.provider()提供的SelectorProvider实例，SelectStrategyFactory传入的是DefaultSelectStrategyFactory(即使用默认的选择策略，后面在探讨)，继续看：
+
+![重载的构造方法](./img/NioEventLoopGroup05.png)
+
+这里调用的是父类(MultithreadEventLoopGroup)的构造方法，线程数是0，Executor是null，SelectorProvider传入的SelectorProvider.provider()提供的SelectorProvider实例，SelectStrategyFactory传入的是DefaultSelectStrategyFactory，RejectedExecutionHandler传入的是io.netty.util.concurrent.RejectedExecutionHandler的实例(拒绝策略是抛出RejectedExecutionException)，下面看下父类(MultithreadEventLoopGroup)的构造方法：
+
+![MultithreadEventLoopGroup的构造方法](./img/MultithreadEventLoopGroup01.png)
+
+可以看到到传入的线程数为0时，线程数被改为io.netty.channel.MultithreadEventLoopGroup#DEFAULT_EVENT_LOOP_THREADS，这个是个静态常量，在MultithreadEventLoopGroup的静态代码块中初始化的：
+
+![DEFAULT_EVENT_LOOP_THREADS](./img/MultithreadEventLoopGroup02.png)
+
+当系统变量中存在io.netty.eventLoopThreads的值时，使用这个值作为线程数，当不存在时，设置为NettyRuntime.availableProcessors() * 2，这里是机器CPU核心数的2倍，最后调用Runtime.getRuntime().availableProcessors()来获取核心数，调用过程不在赘述。下面我们看MultithreadEventLoopGroup的父类(MultithreadEventExecutorGroup)的构造方法：
+
+![MultithreadEventExecutorGroup](./img/MultithreadEventExecutorGroup01.png)
+
+构造方法主要做了一下几件是：
+1. 初始化 Executor
+
+```
+if (executor == null) {
+    executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
+}
+```
+这里使用了ThreadPerTaskExecutor作为Executor的实现，ThreadFactory使用默认的DefaultThreadFactory
+
+2. 通过nThreads初始化EventExecutor数组
+
+```
+children = new EventExecutor[nThreads];
+
+for (int i = 0; i < nThreads; i ++) {
+    boolean success = false;
+    try {
+        children[i] = newChild(executor, args);
+        success = true;
+    } catch (Exception e) {
+        // TODO: Think about if this is a good exception type
+        throw new IllegalStateException("failed to create a child event loop", e);
+    } finally {
+        if (!success) {
+            for (int j = 0; j < i; j ++) {
+                children[j].shutdownGracefully();
+            }
+
+            for (int j = 0; j < i; j ++) {
+                EventExecutor e = children[j];
+                try {
+                    while (!e.isTerminated()) {
+                        e.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+                    }
+                } catch (InterruptedException interrupted) {
+                    // Let the caller handle the interruption.
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+    }
+}
+```
+
+3. 初始化EventExecutorChooserFactory.EventExecutorChooser
+
+```
+chooser = chooserFactory.newChooser(children);
+```
+
+总结：NioEventLoopGroup的构造方法只是做一些初始化工作，网上很多代码对于bossGroup的初始化会吧线程数设为1，这么做将不会再使用默认的规则(即cpu核心数的2倍)，因为bossGroup只接受链接，真正出来是在workGroup中处理，所以它的线程数可以只是一个，这里根据业务量来选择。
