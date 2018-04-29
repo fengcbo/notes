@@ -9,7 +9,7 @@ executor.execute(new RunnableTask1());
 executor.execute(new RunnableTask2());
 ```
 
-但是，Executor并不严格要求任务的执行一定是异步的。在简单情境下，执行器可以在调用者线程中立即直接执行提交的任务。
+但是，Executor并不严格要求任务的执行一定是异步的。在简单情境下，执行器可以在调用者线程中立即直接执行提交的任务。
 
 ```
 class DirectExecutor implements Executor {
@@ -19,7 +19,7 @@ class DirectExecutor implements Executor {
 }
 ```
 
-更常见的情况是，任务在其他线程执行，而不是在调用者的线程中。下面的执行器为每个任务创建了一个新的线程。
+更常见的情况是，任务在其他线程执行，而不是在调用者的线程中。下面的执行器为每个任务创建了一个新的线程。
 
 ```
 class ThreadPerTaskExecutor implements Executor {
@@ -70,4 +70,4 @@ class SerialExecutor implements Executor {
 
 ## 唯一的方法 void execute(Runnable command)
 
-在未来的某个时间执行提交的命令。任务的执行可能在一个新的线程、可能在线程池、或者在调用者的线程，这由Executor的具体实现来决定。
+在未来的某个时间执行提交的命令。任务的执行可能在一个新的线程、可能在线程池、或者在调用者的线程，这由Executor的具体实现来决定。
