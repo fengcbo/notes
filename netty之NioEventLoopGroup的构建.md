@@ -157,4 +157,52 @@ for (int i = 0; i < nThreads; i ++) {
 chooser = chooserFactory.newChooser(children);
 ```
 
+## ThreadPerTaskExecutor
+
+MultithreadEventExecutorGroup的Executor为ThreadPerTaskExecutor实例，ThreadPerTaskExecutor的构造方法传入了newDefaultThreadFactory()返回的ThreadFactory，这个方法创建了一个DefaultThreadFactory实例。
+
+![newDefaultThreadFactory()](./img/newDefaultThreadFactory.png)
+
+DefaultThreadFactory实现了java.util.concurrent.ThreadFactory，用于创建线程并为线程初始化默认值。下面是DefaultThreadFactory的构造方法
+
+![DefaultThreadFactory01()](./img/DefaultThreadFactory01.png)
+
+它调用了重载的构造方法，并将线程默认设置为非守护线程，优先级设置为Thread.NORM_PRIORITY，接续往下看：
+![DefaultThreadFactory03()](./img/DefaultThreadFactory03.png)
+
+这里同样调用了重载的构造方法，只是将poolType转换成了poolName，转换过程如下：
+
+![toPoolName](./img/toPoolName.png)
+
+这里只是简单的将Class类型转换成字符串，不在赘述，感兴趣自己去跟。下面看重载的构造方法
+
+![DefaultThreadFactory02()](./img/DefaultThreadFactory02.png)
+
+这里同样调用了重载构造方法，只是将将线程组设置为了当前线程的线程组，继续：
+
+![DefaultThreadFactory04()](./img/DefaultThreadFactory04.png)
+
+可以看到这里为DefaultThreadFactory的成员属性设置了初始值，在创建线程时会用到这些属性。下面看下线程创建的方法：
+
+![newThread01()](./img/newThread01.png)
+
+这里就是为线程设置优先级和是否是守护进程。构建线程重载的newThread()方法，传入了DefaultRunnableDecorator的实例和线程名，DefaultRunnableDecorator的实现如下：
+
+![DefaultRunnableDecorator](./img/DefaultRunnableDecorator.png)
+
+DefaultRunnableDecorator是实现了Runnable接口，见名知意，这里使用了装饰模式，肯定为Runnable扩展了功能，可以看到构造方法接受一个Runable参数，在自己的run方法中执行传入的Runnable的run方法，执行完成清除绑定在线程的数据。至于为什么要清除绑定到线程的数据，接下来会分析。
+
+下面看下newThread的重载方法，比较简单：
+
+![newThread02()](./img/newThread02.png)
+
+这里使用了Thread的子类FastThreadLocalThread。下面我们回头看下ThreadPerTaskExecutor的实现：
+
+![ThreadPerTaskExecutor](./img/ThreadPerTaskExecutor.png)
+
+这个类看似简单，却使用了两种设计模式：代理模式和命令模式。ThreadPerTaskExecutor将线程的创建委托给了ThreadFactory来创建，同时ThreadPerTaskExecutor使用了命令模式将任务的提交和任务的执行进行了解耦，客户端将命令分装成Runnable对象交给ThreadPerTaskExecutor来执行，它们并不关系怎么执行。这里ThreadPerTaskExecutor启动了一个新的线程来执行任务。
+
+ThreadPerTaskExecutor实现了java.util.concurrent.Executor，Executor是JDK1.5以后引入的，它实现了任务提交和任务执行的解耦，具体参考 [Executor的javadoc](./java.util.concurrent.Executor.md)
+
+
 总结：NioEventLoopGroup的构造方法只是做一些初始化工作，网上很多代码对于bossGroup的初始化会吧线程数设为1，这么做将不会再使用默认的规则(即cpu核心数的2倍)，因为bossGroup只接受链接，真正出来是在workGroup中处理，所以它的线程数可以只是一个，这里根据业务量来选择。
