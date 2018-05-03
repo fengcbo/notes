@@ -77,16 +77,20 @@ Create a new instance using the default number of threads, the default ThreadFac
 SelectorProvider.provider()这个方法默认返回的SelectorProvider的实例是与平台相关的，在openjdk中可以看到在linux上返回的是EPollSelectorProvider，windows上返回的WindowsSelectorProvider，mac上返回的是KQueueSelectorProvider，salaris返回的是DevPollSelectorProvider。
 
 下面看一下NioEventLoopGroup构造过程：
-这是默认的构造方法，它传递的nThreads即线程数为0
+这是默认的构造方法，它传递的nThreads即线程数为0
+
 ![默认构造方法](./img/NioEventLoopGroup01.png)
 
-看默认构造方法的重载方法，即默认构造方法调用的另一个构造方法：
+看默认构造方法的重载方法，即默认构造方法调用的另一个构造方法：
+
 ![重载的构造方法](./img/NioEventLoopGroup02.png)
 
 线程数出入的是0，Executor是null，在看下另一个重载的构造方法：
+
 ![重载的构造方法](./img/NioEventLoopGroup03.png)
 
 线程数传入的是0，Executor是null，SelectorProvider传入的SelectorProvider.provider()提供的SelectorProvider实例，继续看：
+
 ![重载的构造方法](./img/NioEventLoopGroup04.png)
 
 线程数传入的是0，Executor是null，SelectorProvider传入的SelectorProvider.provider()提供的SelectorProvider实例，SelectStrategyFactory传入的是DefaultSelectStrategyFactory(即使用默认的选择策略，后面在探讨)，继续看：
@@ -97,7 +101,7 @@ SelectorProvider.provider()这个方法默认返回的SelectorProvider的实例�
 
 ![MultithreadEventLoopGroup的构造方法](./img/MultithreadEventLoopGroup01.png)
 
-可以看到到传入的线程数为0时，线程数被改为io.netty.channel.MultithreadEventLoopGroup#DEFAULT_EVENT_LOOP_THREADS，这个是个静态常量，在MultithreadEventLoopGroup的静态代码块中初始化的：
+可以看到到传入的线程数为0时，线程数被改为io.netty.channel.MultithreadEventLoopGroup#DEFAULT_EVENT_LOOP_THREADS，这个是个静态常量，在MultithreadEventLoopGroup的静态代码块中初始化的：
 
 ![DEFAULT_EVENT_LOOP_THREADS](./img/MultithreadEventLoopGroup02.png)
 
@@ -167,7 +171,8 @@ DefaultThreadFactory实现了java.util.concurrent.ThreadFactory，用于创建�
 
 ![DefaultThreadFactory01()](./img/DefaultThreadFactory01.png)
 
-它调用了重载的构造方法，并将线程默认设置为非守护线程，优先级设置为Thread.NORM_PRIORITY，接续往下看：
+它调用了重载的构造方法，并将线程默认设置为非守护线程，优先级设置为Thread.NORM_PRIORITY，接续往下看：
+
 ![DefaultThreadFactory03()](./img/DefaultThreadFactory03.png)
 
 这里同样调用了重载的构造方法，只是将poolType转换成了poolName，转换过程如下：
@@ -178,7 +183,7 @@ DefaultThreadFactory实现了java.util.concurrent.ThreadFactory，用于创建�
 
 ![DefaultThreadFactory02()](./img/DefaultThreadFactory02.png)
 
-这里同样调用了重载构造方法，只是将将线程组设置为了当前线程的线程组，继续：
+这里同样调用了重载构造方法，只是将将线程组设置为了当前线程的线程组，继续：
 
 ![DefaultThreadFactory04()](./img/DefaultThreadFactory04.png)
 
@@ -186,11 +191,11 @@ DefaultThreadFactory实现了java.util.concurrent.ThreadFactory，用于创建�
 
 ![newThread01()](./img/newThread01.png)
 
-这里就是为线程设置优先级和是否是守护进程。构建线程重载的newThread()方法，传入了DefaultRunnableDecorator的实例和线程名，DefaultRunnableDecorator的实现如下：
+这里就是为线程设置优先级和是否是守护进程。构建线程重载的newThread()方法，传入了DefaultRunnableDecorator的实例和线程名，DefaultRunnableDecorator的实现如下：
 
 ![DefaultRunnableDecorator](./img/DefaultRunnableDecorator.png)
 
-DefaultRunnableDecorator是实现了Runnable接口，见名知意，这里使用了装饰模式，肯定为Runnable扩展了功能，可以看到构造方法接受一个Runable参数，在自己的run方法中执行传入的Runnable的run方法，执行完成清除绑定在线程的数据。至于为什么要清除绑定到线程的数据，接下来会分析。
+DefaultRunnableDecorator是实现了Runnable接口，见名知意，这里使用了装饰模式，肯定为Runnable扩展了功能，可以看到构造方法接受一个Runable参数，在自己的run方法中执行传入的Runnable的run方法，执行完成清除绑定在线程的数据。至于为什么要清除绑定到线程的数据，接下来会分析。
 
 下面看下newThread的重载方法，比较简单：
 
