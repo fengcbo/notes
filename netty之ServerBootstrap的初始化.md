@@ -22,7 +22,7 @@ channel()方法是在AbstractBootstrap中定义的，它的javadoc说：传入�
 
 ![ReflectiveChannelFactory](./img/ReflectiveChannelFactory.png)
 
-ReflectiveChannelFactory实现了ChannelFactory接口，见名知意ChannelFactory是创建Channel的工厂类，比较简单只定义了一个newChannel()方法，这里不再详述。ReflectiveChannelFactory实现了newChannel()方法，它是通过反射创建传入的class对象的实例，本例中是创建NioServerSocketChannel对象。
+ReflectiveChannelFactory实现了ChannelFactory接口，见名知意ChannelFactory是创建Channel的工厂类，比较简单只定义了一个newChannel()方法，这里不再详述。ReflectiveChannelFactory实现了newChannel()方法，它是通过反射创建传入的class对象的实例，本例中是创建NioServerSocketChannel对象。
 
 再来看channelFactory()方法：
 
