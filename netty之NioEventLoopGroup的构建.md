@@ -161,6 +161,18 @@ for (int i = 0; i < nThreads; i ++) {
 chooser = chooserFactory.newChooser(children);
 ```
 
+下面分析下EventExecutor的初始化方法newChild(executor, args)，这里使用了模板方法模式，该方法在MultithreadEventExecutorGroup中定义：
+
+![newChild01()](./img/newChild01.png)
+
+javadoc的意思是：创建一个EventExecutor实例，这个实例在以后会通过next()方法访问。这个方法将会被每个服务于当前事件循环组的线程所调用。
+
+看下该方法在NioEventLoopGroup的实现：
+
+![newChild02()](./img/newChild02.png)
+
+这个方法创建了一个NioEventLoop，具体参考 [netty之NioEventLoop](netty之NioEventLoop.md)
+
 ## ThreadPerTaskExecutor
 
 MultithreadEventExecutorGroup的Executor为ThreadPerTaskExecutor实例，ThreadPerTaskExecutor的构造方法传入了newDefaultThreadFactory()返回的ThreadFactory，这个方法创建了一个DefaultThreadFactory实例。

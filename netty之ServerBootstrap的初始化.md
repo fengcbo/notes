@@ -63,4 +63,78 @@ bind()方法接受一个int类型的端口号，返回一个 [ChannelFuture](.
 
 ![doBind](./img/doBind.png)
 
+doBind方法首先调用initAndRegister方法初始化并注册了一个Channel，看initAndRegister的实现：
 
+![initAndRegister](./img/initAndRegister.png)
+
+initAndRegister这个方法首先通过channelFactory方法创建了一个Channel，然后通过init()方法对Channel进行初始化。init()方法是一个模板方法，在AbstractBootstrap定义，我们直接看ServerBootstrap的实现：
+
+![init](./img/init.png)
+
+init()方法首先为Channel设置选项(options)，然后为Channel设置属性(attr)，最后获取与Channel绑定的ChannelPipeline，并为该ChannelPipeline设置自定义的ChannelInitializer，当NioServerSocketChannel在EventLoop注册成功时，该ChannelInitializer的initChannel方法将被调用，initChannel先设置用户配置的hanlder，然后在事件循环中为pipeline添加ServerBootstrapAcceptor，该Handler主要用来将新创建的NioSocketChannel注册到EventLoopGroup中。
+
+接下来执行ChannelFuture regFuture = config().group().register(channel)，config().group()其实返回的是bossGroup实例，然后调用的它的register方法，register的具体实现在MultithreadEventLoopGroup中：
+
+![register](./img/register.png)
+
+首先使用next()在BOSS EventLoopGroup中选出下一个EventLoop，然后执行注册。
+
+![register02](./img/register02.png)
+
+上面的注册方法在SingleThreadEventLoop中，然后是看下重载的方法：
+
+![register03](./img/register03.png)
+
+promise.channel().unsafe()返回io.netty.channel.Channel.Unsafe，这个类是netty内部使用的，不建议外部调用。
+
+![register04](./img/register04.png)
+
+该方法首先获取到与Channel绑定的EventLoop，然后判断是否是当前EventLoop发起的，如果是直接在本线程执行，如果不是，则封装成Task由该EventLoop执行。接着看register0()方法：
+
+![register0](./img/register0.png)
+
+doRegister()是完成真正的注册操作，这个是个多态方法，定义在AbstractChannel，本文示例中的实现在AbstractNioChannel
+
+![doRegister](./img/doRegister.png)
+
+doRegister()的ops设置为0，所以还不能监听网络读写。然后调用了pipeline.invokeHandlerAddedIfNeeded()；这里是调用Handler的handlerAdded()方法，如何实现的等分析pipeline时在细说。然后safeSetSuccess(promise);将注册设为成功，并调用pipeline.fireChannelRegistered();这里会调用Handler的channelRegistered()方法。执行完initAndRegister()方法，开始执行：doBind0()
+
+![doBind0](./img/doBind0.png)
+
+这个方法会将绑定操作放入执行队列，然后调用Channel(实际是AbstractChannel)的bind()方法：
+
+![AbstractChannel_bind](./img/AbstractChannel_bind.png)
+
+然后调用pipeline(DefaultChannelPipeline)的bind()方法：
+
+![DefaultChannelPipeline_bind](./img/DefaultChannelPipeline_bind.png)
+
+然后调用AbstractChannelHandlerContext的bind()方法：
+
+![AbstractChannelHandlerContext_bind](./img/AbstractChannelHandlerContext_bind.png)
+
+然后调用AbstractChannelHandlerContext的invokeBind()方法：
+
+![AbstractChannelHandlerContext_invokeBind](./img/AbstractChannelHandlerContext_invokeBind.png)
+
+然后调用DefaultChannelPipeline.HeadContext的bind方法：
+
+![DefaultChannelPipeline.HeadContext_bind](./img/DefaultChannelPipeline.HeadContext_bind.png)
+
+接着调用AbstractChannel.AbstractUnsafe的bind()方法：
+
+![AbstractChannel.AbstractUnsafe_bind](./img/AbstractChannel.AbstractUnsafe_bind.png)
+
+这个方法主要做三件事：
+
+1. 调用doBind()执行java原生socket绑定
+2. 通过pipeline.fireChannelActive()触发Handler的channelActive()方法
+3. 设置ChannelPromise为成功
+
+看下doBind()方法(这个方法是NioServerSocketChannel中的)：
+
+![NioServerSocketChannel_doBind](./img/NioServerSocketChannel_doBind.png)
+
+这里根据java的版本分别调用了不同的jdk绑定方法。
+
+至此netty的绑定流程就分析完毕了。
