@@ -1,6 +1,7 @@
 # Condition 介绍
 
 ## Condition
+
 ### class doc
 
 Condition 将对象监视器方法(wait、notify和notifyAll)放入到了不同的对象中，使得每个对象具有了多个wait方法集，并将它们与任意锁实现的使用相结合。Lock取代了对象监视器的同步方法和同步代码块，Condition取代了Object的监视方法的使用。

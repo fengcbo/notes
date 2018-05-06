@@ -4,13 +4,13 @@
 
 java.io 使用阻塞的方式处理输入输出
 
-```
+```text
 java.io中的最核心的概念是流(Stream)，面向流(分为输入流和输出流)的编程。java中一个流要么是输出流要不是输入流，不能既是输出流又是输入流。
 ```
 
 java.nio JDK1.4后推出的，建议以非阻塞的方式处理输入输出。
 
-```
+```text
 java.nio中有三个核心概念：Selector、Channel与Buffer。在java.nio中，我们是面向块(block)或者缓冲区(Buffer)来编程。
 
 一个Selector关联一个Thread，每个Selector会监听多个Channel，每个Channel会对应一个Buffer(缓冲)。每个线程对应一个Selelctor，线程操作哪个Channel是通过Selector的事件来控制的。
@@ -47,13 +47,15 @@ Buffer包含四个重要属性和五个重要方法
 > reset()：重置buffer的position为上次标记(mark)的值。将position设置为mark，即重读标记后的数据。
 
 buffer的get和put方法分为相对方法和绝对方法：
+
 1. 相对方法：limit值与positioin值会在操作时被考虑到
 2. 绝对方法：完全忽略limit和position的值
 
 ### ByteBuffer
+
 创建ByteBuffer的方法如下：
 
-```
+```java
 ByteBuffer buffer = ByteBuffer.allocate(1024);
 ```
 
@@ -78,7 +80,7 @@ zero-copy见名知意：零拷贝。其实zero-copy所谓的零拷贝是相对�
 2. 创建Buffer
 3. 将数据从Channel写到Buffer中
 
-```
+```java
 FileInputStream fis = new FileInputStream("input.txt");
 FileOutputStream fos = new FileOutputStream("output.txt");
 
@@ -105,4 +107,3 @@ while (true){
 inputChannel.close();
 outputChannel.close();
 ```
-
