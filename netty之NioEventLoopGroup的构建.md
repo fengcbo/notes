@@ -171,7 +171,7 @@ javadoc的意思是：创建一个EventExecutor实例，这个实例在以后会
 
 ![newChild02()](./img/newChild02.png)
 
-这个方法创建了一个NioEventLoop，具体参考 [netty之NioEventLoop](netty之NioEventLoop.md)
+这个方法创建了一个NioEventLoop，具体参考 [netty之NioEventLoop](netty之NioEventLoop.md)
 
 ## ThreadPerTaskExecutor
 
