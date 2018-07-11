@@ -131,12 +131,107 @@ ints.subscribe(i -> System.out.println(i),
 Done
 ```
 
+最后一个subscribe方法包含一个自定义的Subscriber，它展示了如何联系一个自定义的Subscriber，如下所示：
+
+```java
+SampleSubscriber<Integer> ss = new SampleSubscriber<Integer>();
+Flux<Integer> ints = Flux.range(1, 4);
+ints.subscribe(i -> System.out.println(i),
+    error -> System.err.println("Error " + error),
+    () -> {System.out.println("Done");},
+    s -> ss.request(10));
+ints.subscribe(ss);
+```
+
+上面的代码示例中，我们提供了一个自定义Subscriber，作为subscribe的参数。下面是这个自定义的Subscriber，它是Subscriber 的简单实现：
+
+```java
+package io.projectreactor.samples;
+
+import org.reactivestreams.Subscription;
+
+import reactor.core.publisher.BaseSubscriber;
+
+public class SampleSubscriber<T> extends BaseSubscriber<T> {
+
+        public void hookOnSubscribe(Subscription subscription) {
+                System.out.println("Subscribed");
+                request(1);
+        }
+
+        public void hookOnNext(T value) {
+                System.out.println(value);
+                request(1);
+        }
+}
+```
+
+SampleSubscriber 继承了BaseSubscriber，BaseSubscriber是Reactor推荐的自定义Subscriber的抽象基类。这个类提供了可以被重写的钩子用来协调subscriber的行为。它默认触发一个无限的请求，该行为和subscribe()一致。但是，当你想要一个自定义请求数量时，继承BaseSubscriber非常有用。
+
+最低限度的实现是实现hookOnSubscribe(Subscription subscription) 和 hookOnNext(T value)两个方法。当前示例中，hookOnSubscribe方法输出Subscribed，并发出第一个请求。hookOnNext方法输出并处理请求的值，并请求下一个值。
+
+SampleSubscriber输出如下：
+```text
+Subscribed
+1
+2
+3
+4
+```
+
+> 你当然也可以实现hookOnError, hookOnCancel, 和 hookOnComplete方法。你也可以实现hookFinally方法。SampleSubscribe绝对是Subscriber的最小实现，并执行一个有界的请求。
+> 
 
 
 
+Reactive Streams 规范定义了另一个subscribe的变种。它接受一个自定义Subscriber，不需要其他选项，方法签名如下所示：
+
+```java
+subscribe(Subscriber<? super T> subscriber);
+```
 
 
 
+如果你有了一个Subscribe对象，这个subscribe方法很有用。更多的时候，你需要它，是因为你想要做一些与subscription相关的回调。更可能，你需要处理背压并自己触发请求。
+
+在上面的情形下，使用BaseSubscriber抽象类可以将事情变得简单，它提供处理背压的便捷方法。
 
 
 
+使用BaseSubscriber很好的处理背压：
+
+```java
+Flux<String> source = someStringSource();
+
+source.map(String::toUpperCase)
+      .subscribe(new BaseSubscriber<String>() { ①
+          @Override
+          protected void hookOnSubscribe(Subscription subscription) {
+              ②
+              request(1); ③
+          }
+
+          @Override
+          protected void hookOnNext(String value) {
+              request(1); ④
+          }
+          
+          ⑤
+      });
+```
+
+
+
+①BaseSubscriber是一个抽象类，所以我们创建一个匿名内部类，并指定泛型
+②BaseSubscriber定义了各种各样的可以从Subscriber实现的信号处理回调。
+③它还处理捕获Subscription的样板文件，以便您可以在其他钩子中操作它。
+④requests(n)用于传播来自任意回调钩子的背压请求到订阅对象(subscription)。这里我们通过向源请求一个元素开始流。
+⑤其他的回调钩子还有hookOnComplete, hookOnError, hookOnCancel, 以及 hookFinally(当流终止时，hookFinally总是被调用并且终止类型会作为SignalType参数传递) 。
+
+
+
+> 在处理请求时，您必须小心地为序列生成足够的需求，否则您的流量将被“卡住”。这就是为什么BaseSubscriber强制你实现subscription以及onNext钩子，在这些地方你通常至少调用request一次。
+
+
+
+BaseSubscriber也提供了一个requestUnbounded()方法，可以切换到无限模式(等于request(Long.MAX_VALUE))。
